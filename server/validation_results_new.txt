@@ -1,0 +1,12 @@
+--- Email Validation Test ---
+'test@example.com': true
+'invalid-email': false
+
+--- Password Validation Test ---
+'Password123!': true
+'Hidden#123': true
+'Hyphen-123': true
+'Underscore_123': true
+'Dot.123': true
+'Space 123!': true
+'weak': false
