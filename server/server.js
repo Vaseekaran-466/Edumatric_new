@@ -10,10 +10,22 @@ dotenv.config();
 const app = express();
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
-// credentials: true is required so the browser sends/receives HttpOnly cookies
-// origin must be explicit (not '*') when credentials are enabled
+const origins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(o => o.trim());
+// Ensure all origins have a protocol; default to https for production URLs if missing
+const allowedOrigins = origins.map(o => (o.startsWith('http') ? o : `https://${o}`));
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Rejected origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
