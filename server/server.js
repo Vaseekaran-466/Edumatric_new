@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import routes from './Routes/routes.js';
 import dbconnect from './config/db.js';
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -44,18 +45,53 @@ dbconnect();
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/datasedu', routes);
 
+// ─── Diagnostics (Temporary for debugging 500 errors) ────────────────────────
+app.get('/api/datasedu/diag', async (req, res) => {
+    try {
+        const dbState = mongoose.connection.readyState;
+        const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+        
+        res.status(200).json({
+            status: 'Diagnostic Report',
+            database: {
+                state: states[dbState] || 'unknown',
+                connected: dbState === 1,
+                host: mongoose.connection.host || 'none'
+            },
+            env: {
+                has_mongo_url: !!process.env.MONGO_URL,
+                has_jwt_secret: !!process.env.JWT_SECRET,
+                client_url: process.env.CLIENT_URL,
+                node_env: process.env.NODE_ENV
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 // Catches any unhandled errors thrown by route handlers
 app.use((err, req, res, next) => {
-    console.error('Unhandled Error:', err);
-    if (err.stack) console.error(err.stack); // Print full stack trace
+    console.error('SERVER_ERROR_HANDLED:', {
+        message: err.message,
+        status: err.status,
+        path: req.path,
+        method: req.method,
+        stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
+    });
+
     res.status(err.status || 500).json({
         message: err.message || 'Internal Server Error',
-        error: err.toString() // Also send back some info for easier debugging
+        error: process.env.NODE_ENV === 'production' ? 'Contact Support' : err.toString()
     });
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
