@@ -10,6 +10,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust the reverse proxy (Render/Vercel) so that "secure: true" cookies are correctly sent
+app.set('trust proxy', 1);
+
 // ─── CORS ────────────────────────────────────────────────────────────────────
 const origins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(o => o.trim());
 // Ensure all origins have a protocol; default to https for production URLs if missing
