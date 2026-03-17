@@ -48,6 +48,16 @@ dbconnect();
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/datasedu', routes);
 
+app.get('/api/datasedu/test-cookie', (req, res) => {
+    res.cookie('test', 'working', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 1000 * 60 * 60
+    });
+    res.json({ message: 'Cookie set attempt made' });
+});
+
 // ─── Diagnostics (Temporary for debugging 500 errors) ────────────────────────
 app.get('/api/datasedu/diag', async (req, res) => {
     try {
