@@ -23,7 +23,10 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.includes(origin)) {
+        // Dynamically allow Vercel previews (e.g., https://edumatric-i77njav51-...vercel.app)
+        const isVercelPreview = origin.startsWith('https://edumatric') && origin.endsWith('.vercel.app');
+
+        if (allowedOrigins.includes(origin) || isVercelPreview) {
             callback(null, true);
         } else {
             console.warn(`[CORS] Rejected origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
