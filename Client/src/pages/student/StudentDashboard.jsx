@@ -9,7 +9,10 @@ const StudentDashboard = () => {
     const userId = user?._id || user?.id;
 
     const myCourses = (courses || []).filter(c =>
-        c.students && c.students.some(sObj => String(sObj?._id || sObj?.id || sObj) === String(userId))
+        c.students && c.students.some(sObj => {
+            const studentId = sObj?._id || sObj?.id || sObj;
+            return String(studentId) === String(userId);
+        })
     ).map(c => {
         // Calculate progress dynamically
         const courseAssignments = (assignments || []).filter(a => String(a.courseId?._id || a.courseId) === String(c._id));

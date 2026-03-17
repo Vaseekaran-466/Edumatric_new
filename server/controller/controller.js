@@ -26,7 +26,7 @@ const sendToken = (res, user) => {
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax', // Changed from Strict to Lax for better dev environment compatibility
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' is required for cross-domain (Vercel to Render)
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
     });
 };
@@ -129,7 +129,7 @@ export const logout = (req, res) => {
     res.clearCookie('token', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.status(200).json({ message: 'Logged out successfully' });
 };

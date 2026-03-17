@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -20,6 +20,12 @@ const Login = () => {
     const [error, setError] = useState('');
     const [selectedRole, setSelectedRole] = useState(null);
     const [formData, setFormData] = useState({ email: '', password: '' });
+
+    // Clear form data on mount to prevent browser back-button caching
+    useEffect(() => {
+        setFormData({ email: '', password: '' });
+        setSelectedRole(null);
+    }, []);
 
     const roleHints = [
         { id: 'student', icon: UserCircleIcon, label: 'Student', email: 'student1@edu.com' },

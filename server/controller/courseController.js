@@ -19,14 +19,7 @@ export const createCourse = async (req, res) => {
 // ─── Get All Courses ─────────────────────────────────────────────────────────
 export const getAllCourses = async (req, res) => {
     try {
-        // Prepare query filter based on role
-        const query = { isActive: true };
-        
-        if (req.user && req.user.role === 'student') {
-            query.students = req.user.id; // Only fetch courses where this student is enrolled
-        }
-
-        const courses = await Course.find(query)
+        const courses = await Course.find({ isActive: true })
             .populate('students', 'name email')  // Only expose non-sensitive fields
             .sort({ createdAt: -1 });
         res.status(200).json({ courses });
