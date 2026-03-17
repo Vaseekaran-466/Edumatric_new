@@ -23,10 +23,14 @@ const sendToken = (res, user) => {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     });
 
+    // Determine if we're running in a production-like cross-domain setup
+    const isProduction = process.env.NODE_ENV === 'production' || 
+                         (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
+
     res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' is required for cross-domain (Vercel to Render)
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax', // 'none' is required for cross-domain (Vercel to Render)
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
     });
 };
@@ -126,10 +130,13 @@ export const login = async (req, res) => {
 
 // ─── Logout ──────────────────────────────────────────────────────────────────
 export const logout = (req, res) => {
+    const isProduction = process.env.NODE_ENV === 'production' || 
+                         (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
+
     res.clearCookie('token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
     });
     res.status(200).json({ message: 'Logged out successfully' });
 };
