@@ -5,7 +5,7 @@
       "destination": "https://edumatric-new.onrender.com/api/datasedu/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
   ]

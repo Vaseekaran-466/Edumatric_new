@@ -23,14 +23,13 @@ const sendToken = (res, user) => {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     });
 
-    // Determine if we're running in a production-like cross-domain setup
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                         (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost'));
-
+    // Always use cross-domain secure cookie settings.
+    // Render always serves over HTTPS, so secure:true is always valid.
+    // sameSite:'none' is required for cross-domain cookies (Vercel frontend → Render backend).
     res.cookie('token', token, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax', // 'none' is required for cross-domain (Vercel to Render)
+        secure: true,
+        sameSite: 'none',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
     });
 };
@@ -130,13 +129,10 @@ export const login = async (req, res) => {
 
 // ─── Logout ──────────────────────────────────────────────────────────────────
 export const logout = (req, res) => {
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                         (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost'));
-
     res.clearCookie('token', {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
+        secure: true,
+        sameSite: 'none',
     });
     res.status(200).json({ message: 'Logged out successfully' });
 };
