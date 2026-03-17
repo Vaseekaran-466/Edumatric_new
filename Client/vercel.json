@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/datasedu/(.*)",
+      "destination": "https://edumatric-new.onrender.com/api/datasedu/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
