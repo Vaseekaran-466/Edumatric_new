@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 
 const StudentCourses = () => {
-    const { courses, materials, assignments } = useData();
+    const { courses, materials, assignments, submissions, user } = useData();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
@@ -95,7 +95,19 @@ const StudentCourses = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
                         {processedCourses.map((course) => {
                             const courseMaterials = materials.filter(m => m.courseId === course._id);
-                            const progress = course._id?.length % 2 === 0 ? 65 : 40;
+                            
+                            // Dynamic progress calculation
+                            const courseAssignments = assignments.filter(a => String(a.courseId?._id || a.courseId) === String(course._id));
+                            const submittedCount = courseAssignments.filter(a => 
+                                submissions.some(s => 
+                                    String(s.assignmentId?._id || s.assignmentId) === String(a._id) && 
+                                    String(s.studentId?._id || s.studentId?.id || s.studentId) === String(user?._id || user?.id)
+                                )
+                            ).length;
+                            
+                            const progress = courseAssignments.length > 0 
+                                ? Math.round((submittedCount / courseAssignments.length) * 100) 
+                                : 0;
 
                             return (
                                 <div
@@ -180,7 +192,20 @@ const StudentCourses = () => {
                             <tbody className="divide-y divide-slate-50">
                                 {processedCourses.map((course) => {
                                     const courseMaterials = materials.filter(m => m.courseId === course._id);
-                                    const progress = course._id?.length % 2 === 0 ? 65 : 40;
+                                    
+                                    // Dynamic progress calculation
+                                    const courseAssignments = assignments.filter(a => String(a.courseId?._id || a.courseId) === String(course._id));
+                                    const submittedCount = courseAssignments.filter(a => 
+                                        submissions.some(s => 
+                                            String(s.assignmentId?._id || s.assignmentId) === String(a._id) && 
+                                            String(s.studentId?._id || s.studentId?.id || s.studentId) === String(user?._id || user?.id)
+                                        )
+                                    ).length;
+                                    
+                                    const progress = courseAssignments.length > 0 
+                                        ? Math.round((submittedCount / courseAssignments.length) * 100) 
+                                        : 0;
+
                                     return (
                                         <tr key={course._id} className="hover:bg-slate-50/50 transition-colors">
                                             <td className="px-6 py-5">

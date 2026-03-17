@@ -18,8 +18,13 @@ const authMiddleware = (options = { isOptional: false }) => (req, res, next) => 
     }
 
     try {
+        if (!process.env.JWT_SECRET) {
+            console.error('CRITICAL: JWT_SECRET is not defined in environment variables.');
+            return res.status(500).json({ message: 'Internal Server Configuration Error' });
+        }
+        
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('DEBUG: Decoded JWT:', decoded);
+        //console.log('DEBUG: Decoded JWT:', decoded);
         req.user = decoded; // Attach decoded payload { id, email, role } to request
         next();
     } catch (error) {

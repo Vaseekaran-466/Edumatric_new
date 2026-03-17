@@ -12,6 +12,11 @@ import Material from '../module/materialModel.js';
  * SameSite=Strict: Blocks CSRF by default.
  */
 const sendToken = (res, user) => {
+    if (!process.env.JWT_SECRET) {
+        console.error('CRITICAL: JWT_SECRET is not defined. Cannot sign token.');
+        throw new Error('Internal Server Configuration Error');
+    }
+
     const payload = { id: user._id, email: user.email, role: user.role };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {

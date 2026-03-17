@@ -10,7 +10,22 @@ const StudentDashboard = () => {
 
     const myCourses = (courses || []).filter(c =>
         c.students && c.students.some(sObj => String(sObj?._id || sObj?.id || sObj) === String(userId))
-    );
+    ).map(c => {
+        // Calculate progress dynamically
+        const courseAssignments = (assignments || []).filter(a => String(a.courseId?._id || a.courseId) === String(c._id));
+        const submittedCount = courseAssignments.filter(a =>
+            (submissions || []).some(s =>
+                String(s.assignmentId?._id || s.assignmentId) === String(a._id) &&
+                String(s.studentId?._id || s.studentId?.id || s.studentId) === String(userId)
+            )
+        ).length;
+        
+        const progress = courseAssignments.length > 0 
+            ? Math.round((submittedCount / courseAssignments.length) * 100) 
+            : 0;
+            
+        return { ...c, progress };
+    });
     const myCourseIds = myCourses.map(c => String(c._id || c.id));
     const myAssignments = (assignments || []).filter(a =>
         myCourseIds.includes(String(a.courseId?._id || a.courseId))

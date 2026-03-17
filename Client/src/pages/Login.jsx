@@ -29,26 +29,12 @@ const Login = () => {
 
     const handleRoleSelect = (roleObj) => {
         setSelectedRole(roleObj.id);
-        setFormData({
-            email: roleObj.email,
-            password: 'EduDemo@123'
-        });
         setError('');
     };
 
     const handleInputChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
         setError('');
-
-        // Only auto-select roles if the email matches exactly, 
-        // but DO NOT auto-deselect if the user is typing manually.
-        if (e.target.name === 'email') {
-            const hint = roleHints.find(h => h.email === e.target.value);
-            if (hint) {
-                setSelectedRole(hint.id);
-            }
-            // Logic removed: don't clear selectedRole just because email changed
-        }
     };
 
     const handleForgotPass = (e) => {

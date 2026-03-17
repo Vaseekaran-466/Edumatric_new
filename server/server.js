@@ -50,7 +50,7 @@ app.get('/api/datasedu/diag', async (req, res) => {
     try {
         const dbState = mongoose.connection.readyState;
         const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-        
+
         res.status(200).json({
             status: 'Diagnostic Report',
             database: {

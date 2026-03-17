@@ -19,7 +19,14 @@ export const createCourse = async (req, res) => {
 // ─── Get All Courses ─────────────────────────────────────────────────────────
 export const getAllCourses = async (req, res) => {
     try {
-        const courses = await Course.find({ isActive: true })
+        // Prepare query filter based on role
+        const query = { isActive: true };
+        
+        if (req.user && req.user.role === 'student') {
+            query.students = req.user.id; // Only fetch courses where this student is enrolled
+        }
+
+        const courses = await Course.find(query)
             .populate('students', 'name email')  // Only expose non-sensitive fields
             .sort({ createdAt: -1 });
         res.status(200).json({ courses });
@@ -34,6 +41,15 @@ export const getCourseById = async (req, res) => {
     try {
         const course = await Course.findById(req.params.id).populate('students', 'name email');
         if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        // Access control: Ensure student is enrolled in the course if they are a student role.
+        if (req.user && req.user.role === 'student') {
+            const isEnrolled = course.students.some(student => student._id.toString() === req.user.id.toString());
+            if (!isEnrolled) {
+                return res.status(403).json({ message: 'Forbidden: You do not have access to this course' });
+            }
+        }
+
         res.status(200).json({ course });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch course', error: error.message });
