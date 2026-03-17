@@ -25,7 +25,7 @@ const sendToken = (res, user) => {
 
     // Determine if we're running in a production-like cross-domain setup
     const isProduction = process.env.NODE_ENV === 'production' || 
-                         (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
+                         (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost'));
 
     res.cookie('token', token, {
         httpOnly: true,
@@ -131,7 +131,7 @@ export const login = async (req, res) => {
 // ─── Logout ──────────────────────────────────────────────────────────────────
 export const logout = (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production' || 
-                         (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
+                         (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost'));
 
     res.clearCookie('token', {
         httpOnly: true,
