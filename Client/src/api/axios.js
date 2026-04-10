@@ -1,13 +1,20 @@
 import axios from 'axios';
 
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const fallbackBaseUrl = import.meta.env.PROD
+    ? 'https://edumatric-new.onrender.com/api/datasedu'
+    : '/api/datasedu';
+
 /**
  * Shared axios instance for all API calls.
- * - baseURL points to /api so the Vite proxy handles forwarding to :5000 in dev.
+ * - In development, baseURL points to /api so the Vite proxy forwards to :5000.
+ * - In production, default directly to the Render API to avoid relying on a Vercel rewrite
+ *   for authenticated requests and cookies.
  * - withCredentials: true is REQUIRED for the browser to send/receive HttpOnly JWT cookies.
  *   Without this, cookies will not be attached to cross-origin requests.
  */
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || '/api/datasedu',
+    baseURL: (envBaseUrl || fallbackBaseUrl).replace(/\/+$/, ''),
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',

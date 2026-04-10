@@ -14,22 +14,36 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
-const origins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(o => o.trim());
-// Ensure all origins have a protocol; default to https for production URLs if missing
-const allowedOrigins = origins.map(o => (o.startsWith('http') ? o : `https://${o}`));
+const normalizeOrigin = (value) => {
+    if (!value) return null;
+
+    const origin = value.trim().replace(/\/+$/, '');
+    if (!origin) return null;
+    if (origin.startsWith('http://') || origin.startsWith('https://')) return origin;
+    if (origin.startsWith('localhost') || origin.startsWith('127.0.0.1')) return `http://${origin}`;
+
+    return `https://${origin}`;
+};
+
+const allowedOrigins = new Set(
+    (process.env.CLIENT_URL || 'http://localhost:5173')
+        .split(',')
+        .map(normalizeOrigin)
+        .filter(Boolean)
+);
+
+const isAllowedVercelOrigin = (origin) => /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
 
-        // Dynamically allow Vercel previews (e.g., https://edumatric-i77njav51-...vercel.app)
-        const isVercelPreview = origin.startsWith('https://edumatric') && origin.endsWith('.vercel.app');
+        const normalizedOrigin = normalizeOrigin(origin);
 
-        if (allowedOrigins.includes(origin) || isVercelPreview) {
+        if (allowedOrigins.has(normalizedOrigin) || isAllowedVercelOrigin(normalizedOrigin)) {
             callback(null, true);
         } else {
-            console.warn(`[CORS] Rejected origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+            console.warn(`[CORS] Rejected origin: ${origin}. Allowed: ${[...allowedOrigins].join(', ')}`);
             const error = new Error('Not allowed by CORS');
             error.status = 403;
             callback(error);
