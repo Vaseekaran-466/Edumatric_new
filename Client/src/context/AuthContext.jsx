@@ -17,6 +17,18 @@ const ROLE_PATHS = {
   student: '/student',
 };
 
+const getAuthErrorMessage = (err, fallback) => {
+  if (err.response?.status === 503) {
+    return err.response?.data?.message || 'Server database is unavailable. Check the backend deployment.';
+  }
+
+  return (
+    err.response?.data?.errors?.join(', ') ||
+    err.response?.data?.message ||
+    fallback
+  );
+};
+
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -48,7 +60,7 @@ export const AuthProvider = ({ children }) => {
       navigate(ROLE_PATHS[data.user.role] || '/student');
       return { success: true };
     } catch (err) {
-      const message = err.response?.data?.message || 'Login failed';
+      const message = getAuthErrorMessage(err, 'Login failed');
       setError(message);
       return { success: false, message };
     }
@@ -63,10 +75,7 @@ export const AuthProvider = ({ children }) => {
       navigate(ROLE_PATHS[data.user.role] || '/student');
       return { success: true };
     } catch (err) {
-      const message =
-        err.response?.data?.errors?.join(', ') ||
-        err.response?.data?.message ||
-        'Registration failed';
+      const message = getAuthErrorMessage(err, 'Registration failed');
       setError(message);
       return { success: false, message };
     }

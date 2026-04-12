@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
+    UserCircleIcon,
     AcademicCapIcon,
+    ShieldCheckIcon,
     EyeIcon,
     EyeSlashIcon,
     EnvelopeIcon,
@@ -15,10 +17,47 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [selectedRole, setSelectedRole] = useState('student');
     const [formData, setFormData] = useState({ email: '', password: '' });
+
+    const demoAccounts = [
+        {
+            id: 'student',
+            label: 'Student',
+            icon: UserCircleIcon,
+            email: 'student1@edu.com',
+            password: 'EduDemo@123',
+            accent: 'border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent/20',
+        },
+        {
+            id: 'teacher',
+            label: 'Teacher',
+            icon: AcademicCapIcon,
+            email: 'teacher@edu.com',
+            password: 'EduDemo@123',
+            accent: 'border-brand-success bg-brand-success/5 ring-1 ring-brand-success/20',
+        },
+        {
+            id: 'admin',
+            label: 'Admin',
+            icon: ShieldCheckIcon,
+            email: 'admin@edu.com',
+            password: 'EduDemo@123',
+            accent: 'border-slate-800 bg-slate-900/5 ring-1 ring-slate-800/10',
+        },
+    ];
 
     const handleInputChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setError('');
+    };
+
+    const applyDemoAccount = (account) => {
+        setSelectedRole(account.id);
+        setFormData({
+            email: account.email,
+            password: account.password,
+        });
         setError('');
     };
 
@@ -65,9 +104,42 @@ const Login = () => {
                         <p className="text-slate-500 mt-2 text-sm font-medium">Professional Learning Ecosystem</p>
                     </div>
 
-                    <div className="mb-6 text-center">
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Login</label>
-                        <p className="text-xs text-slate-500 font-medium">Enter your own account email and password.</p>
+                    <div className="mb-6">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 text-center">Role Based Login</label>
+                        <div className="grid grid-cols-3 gap-3">
+                            {demoAccounts.map((account) => {
+                                const Icon = account.icon;
+                                const isSelected = selectedRole === account.id;
+
+                                return (
+                                    <button
+                                        key={account.id}
+                                        type="button"
+                                        onClick={() => applyDemoAccount(account)}
+                                        className={`flex flex-col items-center p-3 rounded-2xl border transition-all duration-300 ${isSelected
+                                            ? account.accent
+                                            : 'border-slate-100 bg-slate-50 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        <div className={`p-2 rounded-xl mb-2 transition-all ${isSelected ? 'bg-white text-brand-primary shadow-md' : 'bg-white shadow-sm text-slate-400'}`}>
+                                            <Icon className="w-5 h-5" />
+                                        </div>
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-brand-primary' : 'text-slate-400'}`}>
+                                            {account.label}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3 text-center">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Demo Login</p>
+                            <p className="mt-1 text-xs font-medium text-slate-500">
+                                Select a role above to fill demo credentials, or enter your own account manually.
+                            </p>
+                            <p className="mt-2 text-[11px] font-bold text-slate-700">
+                                Demo password: <span className="text-brand-accent">EduDemo@123</span>
+                            </p>
+                        </div>
                     </div>
 
                     {error && (

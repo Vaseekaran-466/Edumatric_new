@@ -30,6 +30,27 @@ const demoUsers = [
         password: 'EduDemo@123',
         confirmPassword: 'EduDemo@123',
         role: 'admin'
+    },
+    {
+        name: 'Demo Student Gmail',
+        email: 'student.demo@gmail.com',
+        password: 'EduDemo@123',
+        confirmPassword: 'EduDemo@123',
+        role: 'student'
+    },
+    {
+        name: 'Demo Teacher Gmail',
+        email: 'teacher.demo@gmail.com',
+        password: 'EduDemo@123',
+        confirmPassword: 'EduDemo@123',
+        role: 'teacher'
+    },
+    {
+        name: 'Demo Admin Gmail',
+        email: 'admin.demo@gmail.com',
+        password: 'EduDemo@123',
+        confirmPassword: 'EduDemo@123',
+        role: 'admin'
     }
 ];
 
