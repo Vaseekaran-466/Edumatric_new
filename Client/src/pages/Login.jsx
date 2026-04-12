@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-    UserCircleIcon,
     AcademicCapIcon,
-    ShieldCheckIcon,
     EyeIcon,
     EyeSlashIcon,
     EnvelopeIcon,
@@ -14,29 +12,10 @@ import {
 
 const Login = () => {
     const { login, loading: authLoading } = useAuth();
-    const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [selectedRole, setSelectedRole] = useState(null);
     const [formData, setFormData] = useState({ email: '', password: '' });
-
-    // Clear form data on mount to prevent browser back-button caching
-    useEffect(() => {
-        setFormData({ email: '', password: '' });
-        setSelectedRole(null);
-    }, []);
-
-    const roleHints = [
-        { id: 'student', icon: UserCircleIcon, label: 'Student', email: 'student1@edu.com' },
-        { id: 'teacher', icon: AcademicCapIcon, label: 'Teacher', email: 'teacher@edu.com' },
-        { id: 'admin', icon: ShieldCheckIcon, label: 'Admin', email: 'admin@edu.com' },
-    ];
-
-    const handleRoleSelect = (roleObj) => {
-        setSelectedRole(roleObj.id);
-        setError('');
-    };
 
     const handleInputChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -45,7 +24,7 @@ const Login = () => {
 
     const handleForgotPass = (e) => {
         e.preventDefault();
-        alert('Demo Mode: Please use the demo credentials provided by clicking the role icons. In production, this would send a reset link to your email.');
+        setError('Password recovery is not configured yet. Contact the administrator.');
     };
 
     const handleSubmit = async (e) => {
@@ -86,30 +65,9 @@ const Login = () => {
                         <p className="text-slate-500 mt-2 text-sm font-medium">Professional Learning Ecosystem</p>
                     </div>
 
-                    <div className="mb-6">
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 text-center">Login</label>
-                        <div className="grid grid-cols-3 gap-3">
-                            {roleHints.map((roleObj) => {
-                                const { id, icon: Icon, label } = roleObj;
-                                const isSelected = selectedRole === id;
-                                return (
-                                    <button
-                                        key={id}
-                                        type="button"
-                                        onClick={() => handleRoleSelect(roleObj)}
-                                        className={`flex flex-col items-center p-3 rounded-2xl border transition-all duration-300 ${isSelected
-                                            ? 'border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent/20 shadow-lg shadow-brand-accent/5'
-                                            : 'border-slate-100 bg-slate-50 hover:bg-slate-100'
-                                            }`}
-                                    >
-                                        <div className={`p-2 rounded-xl mb-2 transition-all ${isSelected ? 'bg-brand-accent text-white shadow-md' : 'bg-white shadow-sm text-slate-400'}`}>
-                                            <Icon className="w-5 h-5" />
-                                        </div>
-                                        <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-brand-primary' : 'text-slate-400'}`}>{label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                    <div className="mb-6 text-center">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Login</label>
+                        <p className="text-xs text-slate-500 font-medium">Enter your own account email and password.</p>
                     </div>
 
                     {error && (
@@ -118,7 +76,7 @@ const Login = () => {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
                         <div className="space-y-4">
                             <div className="relative group">
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
@@ -133,6 +91,7 @@ const Login = () => {
                                         value={formData.email}
                                         onChange={handleInputChange}
                                         placeholder="Enter your email"
+                                        autoComplete="off"
                                         required
                                     />
                                 </div>
@@ -151,6 +110,7 @@ const Login = () => {
                                         value={formData.password}
                                         onChange={handleInputChange}
                                         placeholder="Enter your password"
+                                        autoComplete="new-password"
                                         required
                                     />
                                     <button

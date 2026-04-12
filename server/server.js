@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import routes from './Routes/routes.js';
-import dbconnect from './config/db.js';
+import dbconnect, { getLastDbError } from './config/db.js';
 import mongoose from 'mongoose';
 
 dotenv.config();
@@ -60,7 +60,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); // Parses cookies — required for reading the JWT token
 
 // ─── Database ─────────────────────────────────────────────────────────────────
-dbconnect();
+void dbconnect().catch((error) => {
+    console.error('Initial database connection failed:', {
+        message: error.message,
+        code: error.code,
+        codeName: error.codeName,
+    });
+});
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/datasedu', routes);
@@ -86,7 +92,8 @@ app.get('/api/datasedu/diag', async (req, res) => {
             database: {
                 state: states[dbState] || 'unknown',
                 connected: dbState === 1,
-                host: mongoose.connection.host || 'none'
+                host: mongoose.connection.host || 'none',
+                lastError: getLastDbError(),
             },
             env: {
                 has_mongo_url: !!process.env.MONGO_URL,
@@ -121,7 +128,7 @@ app.use((err, req, res, next) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    console.error('Unhandled Rejection:', reason);
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
