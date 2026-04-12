@@ -25,7 +25,8 @@ export const getAssignmentsByCourse = async (req, res) => {
     try {
         const assignments = await Assignment.find({ courseId: req.params.courseId })
             .populate('createdBy', 'name email')
-            .sort({ dueDate: 1 });
+            .sort({ dueDate: 1 })
+            .lean();
         res.status(200).json({ assignments });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch assignments', error: error.message });
@@ -38,15 +39,18 @@ export const getAllAssignments = async (req, res) => {
         let query = {};
 
         if (req.user.role === 'student') {
-            const enrolledCourses = await Course.find({ students: req.user.id }).select('_id');
+            const enrolledCourses = await Course.find({ students: req.user.id }).select('_id').lean();
             const courseIds = enrolledCourses.map(c => c._id);
             query = { courseId: { $in: courseIds } };
+        } else if (req.user.role === 'teacher') {
+            query = { createdBy: req.user.id };
         }
 
         const assignments = await Assignment.find(query)
             .populate('courseId', 'title')
             .populate('createdBy', 'name')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         res.status(200).json({ assignments });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch assignments', error: error.message });

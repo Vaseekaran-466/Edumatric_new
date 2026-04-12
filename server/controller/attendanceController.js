@@ -28,7 +28,8 @@ export const getAttendanceByCourse = async (req, res) => {
     try {
         const attendance = await Attendance.find({ courseId: req.params.courseId })
             .populate('records.studentId', 'name email')
-            .sort({ date: -1 });
+            .sort({ date: -1 })
+            .lean();
         res.status(200).json({ attendance });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch attendance', error: error.message });
@@ -42,7 +43,8 @@ export const getMyAttendance = async (req, res) => {
             'records.studentId': req.user.id,
         })
             .populate('courseId', 'title')
-            .select('courseId date records');
+            .select('courseId date records')
+            .lean();
 
         // Filter to only this student's record per date
         const myAttendance = allRecords.map((a) => ({
@@ -50,7 +52,7 @@ export const getMyAttendance = async (req, res) => {
             courseTitle: a.courseId?.title || 'Unknown Course',
             date: a.date,
             status: a.records.find(
-                (r) => r.studentId.toString() === req.user.id
+                (r) => String(r.studentId) === String(req.user.id)
             )?.status,
         }));
 

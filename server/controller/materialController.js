@@ -31,14 +31,17 @@ export const getAllMaterials = async (req, res) => {
 
         if (req.user.role === 'student') {
             // Find courses where student is enrolled
-            const enrolledCourses = await Course.find({ students: req.user.id }).select('_id');
+            const enrolledCourses = await Course.find({ students: req.user.id }).select('_id').lean();
             const courseIds = enrolledCourses.map(c => c._id);
             query = { courseId: { $in: courseIds } };
+        } else if (req.user.role === 'teacher') {
+            query = { uploadedBy: req.user.id };
         }
 
         const materials = await Material.find(query)
             .populate('uploadedBy', 'name')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         res.status(200).json({ materials });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch all materials', error: error.message });
@@ -50,7 +53,8 @@ export const getMaterialsByCourse = async (req, res) => {
     try {
         const materials = await Material.find({ courseId: req.params.courseId })
             .populate('uploadedBy', 'name')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         res.status(200).json({ materials });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch materials', error: error.message });

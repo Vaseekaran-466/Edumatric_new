@@ -19,9 +19,19 @@ export const createCourse = async (req, res) => {
 // ─── Get All Courses ─────────────────────────────────────────────────────────
 export const getAllCourses = async (req, res) => {
     try {
-        const courses = await Course.find({ isActive: true })
-            .populate('students', 'name email')  // Only expose non-sensitive fields
-            .sort({ createdAt: -1 });
+        const query = { isActive: true };
+
+        if (req.user.role === 'student') {
+            query.students = req.user.id;
+        }
+
+        let courseQuery = Course.find(query).sort({ createdAt: -1 });
+
+        if (req.user.role !== 'student') {
+            courseQuery = courseQuery.populate('students', '_id name email');
+        }
+
+        const courses = await courseQuery.lean();
         res.status(200).json({ courses });
     } catch (error) {
         console.error('getAllCourses:', error);
@@ -32,7 +42,9 @@ export const getAllCourses = async (req, res) => {
 // ─── Get Single Course ────────────────────────────────────────────────────────
 export const getCourseById = async (req, res) => {
     try {
-        const course = await Course.findById(req.params.id).populate('students', 'name email');
+        const course = await Course.findById(req.params.id)
+            .populate('students', '_id name email')
+            .lean();
         if (!course) return res.status(404).json({ message: 'Course not found' });
 
         // Access control: Ensure student is enrolled in the course if they are a student role.

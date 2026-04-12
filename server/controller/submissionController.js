@@ -1,4 +1,5 @@
 import Submission from '../module/submissionModel.js';
+import Assignment from '../module/assignmentModel.js';
 
 // ─── Submit Assignment ────────────────────────────────────────────────────────
 // studentId always comes from the JWT, NOT the request body — prevents IDOR
@@ -27,7 +28,8 @@ export const submitAssignment = async (req, res) => {
 export const getMySubmissions = async (req, res) => {
     try {
         const submissions = await Submission.find({ studentId: req.user.id })
-            .populate('assignmentId', 'title dueDate points type');
+            .populate('assignmentId', 'title dueDate points type')
+            .lean();
         res.status(200).json({ submissions });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch submissions', error: error.message });
@@ -39,7 +41,8 @@ export const getSubmissionsByAssignment = async (req, res) => {
     try {
         const submissions = await Submission.find({ assignmentId: req.params.assignmentId })
             .populate('studentId', 'name email')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         res.status(200).json({ submissions });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch submissions', error: error.message });
@@ -52,11 +55,15 @@ export const getAllSubmissions = async (req, res) => {
         let query = {};
         if (req.user.role === 'student') {
             query = { studentId: req.user.id };
+        } else if (req.user.role === 'teacher') {
+            const assignments = await Assignment.find({ createdBy: req.user.id }).select('_id').lean();
+            query = { assignmentId: { $in: assignments.map((assignment) => assignment._id) } };
         }
         const submissions = await Submission.find(query)
             .populate('assignmentId', 'title dueDate points type')
             .populate('studentId', 'name email')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         res.status(200).json({ submissions });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch submissions', error: error.message });

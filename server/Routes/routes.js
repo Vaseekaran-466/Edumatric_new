@@ -16,6 +16,7 @@ import { addMaterial, getAllMaterials, getMaterialsByCourse, updateMaterial, del
 // Middleware
 import authMiddleware from '../middleware/authMiddleware.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
+import requireDbConnection from '../middleware/requireDbConnection.js';
 
 const router = express.Router();
 
@@ -26,18 +27,18 @@ const router = express.Router();
 // POST /api/datasedu/logout
 // GET  /api/datasedu/me
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', requireDbConnection, register);
+router.post('/login', requireDbConnection, login);
 router.post('/logout', logout);
 
 // Soft auth for /me: if no cookie, returns 200 with { user: null } instead of 401 error
-router.get('/me', authMiddleware({ isOptional: true }), getUser);
-router.patch('/me', authMiddleware(), updateMe);
-router.get('/stats', authMiddleware(), roleMiddleware('admin', 'teacher'), getStats);
-router.get('/users', authMiddleware(), roleMiddleware('admin', 'teacher'), getAllUsers);
-router.post('/users', authMiddleware(), roleMiddleware('admin', 'teacher'), createUser);
-router.put('/users/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), updateUser);
-router.delete('/users/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), deleteUser);
+router.get('/me', authMiddleware({ isOptional: true }), requireDbConnection, getUser);
+router.patch('/me', authMiddleware(), requireDbConnection, updateMe);
+router.get('/stats', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), getStats);
+router.get('/users', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), getAllUsers);
+router.post('/users', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), createUser);
+router.put('/users/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), updateUser);
+router.delete('/users/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), deleteUser);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COURSE ROUTES (all protected)
@@ -49,13 +50,13 @@ router.delete('/users/:id', authMiddleware(), roleMiddleware('admin', 'teacher')
 // POST   /api/datasedu/courses/:id/enroll
 // POST   /api/datasedu/courses/:id/unenroll
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/courses', authMiddleware(), getAllCourses);
-router.post('/courses', authMiddleware(), roleMiddleware('admin', 'teacher'), createCourse);
-router.get('/courses/:id', authMiddleware(), getCourseById);
-router.put('/courses/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), updateCourse);
-router.delete('/courses/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), deleteCourse);
-router.post('/courses/:id/enroll', authMiddleware(), roleMiddleware('admin', 'teacher'), enrollStudent);
-router.post('/courses/:id/unenroll', authMiddleware(), roleMiddleware('admin', 'teacher'), unenrollStudent);
+router.get('/courses', authMiddleware(), requireDbConnection, getAllCourses);
+router.post('/courses', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), createCourse);
+router.get('/courses/:id', authMiddleware(), requireDbConnection, getCourseById);
+router.put('/courses/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), updateCourse);
+router.delete('/courses/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), deleteCourse);
+router.post('/courses/:id/enroll', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), enrollStudent);
+router.post('/courses/:id/unenroll', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), unenrollStudent);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ASSIGNMENT ROUTES (all protected)
@@ -65,11 +66,11 @@ router.post('/courses/:id/unenroll', authMiddleware(), roleMiddleware('admin', '
 // PUT    /api/datasedu/assignments/:id
 // DELETE /api/datasedu/assignments/:id
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/assignments', authMiddleware(), getAllAssignments);
-router.post('/assignments', authMiddleware(), roleMiddleware('admin', 'teacher'), createAssignment);
-router.get('/assignments/course/:courseId', authMiddleware(), getAssignmentsByCourse);
-router.put('/assignments/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), updateAssignment);
-router.delete('/assignments/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), deleteAssignment);
+router.get('/assignments', authMiddleware(), requireDbConnection, getAllAssignments);
+router.post('/assignments', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), createAssignment);
+router.get('/assignments/course/:courseId', authMiddleware(), requireDbConnection, getAssignmentsByCourse);
+router.put('/assignments/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), updateAssignment);
+router.delete('/assignments/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), deleteAssignment);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUBMISSION ROUTES (all protected)
@@ -78,11 +79,11 @@ router.delete('/assignments/:id', authMiddleware(), roleMiddleware('admin', 'tea
 // GET   /api/datasedu/submissions/assignment/:assignmentId — teacher views
 // PATCH /api/datasedu/submissions/:id/grade — teacher grades
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/submissions', authMiddleware(), submitAssignment);
-router.get('/submissions', authMiddleware(), getAllSubmissions);
-router.get('/submissions/mine', authMiddleware(), getMySubmissions);
-router.get('/submissions/assignment/:assignmentId', authMiddleware(), roleMiddleware('admin', 'teacher'), getSubmissionsByAssignment);
-router.patch('/submissions/:id/grade', authMiddleware(), roleMiddleware('admin', 'teacher'), gradeSubmission);
+router.post('/submissions', authMiddleware(), requireDbConnection, submitAssignment);
+router.get('/submissions', authMiddleware(), requireDbConnection, getAllSubmissions);
+router.get('/submissions/mine', authMiddleware(), requireDbConnection, getMySubmissions);
+router.get('/submissions/assignment/:assignmentId', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), getSubmissionsByAssignment);
+router.patch('/submissions/:id/grade', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), gradeSubmission);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ATTENDANCE ROUTES (all protected)
@@ -90,9 +91,9 @@ router.patch('/submissions/:id/grade', authMiddleware(), roleMiddleware('admin',
 // GET  /api/datasedu/attendance/:courseId   — get by course
 // GET  /api/datasedu/attendance/mine        — student views personal
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/attendance', authMiddleware(), roleMiddleware('admin', 'teacher'), markAttendance);
-router.get('/attendance/mine', authMiddleware(), getMyAttendance);
-router.get('/attendance/:courseId', authMiddleware(), roleMiddleware('admin', 'teacher'), getAttendanceByCourse);
+router.post('/attendance', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), markAttendance);
+router.get('/attendance/mine', authMiddleware(), requireDbConnection, getMyAttendance);
+router.get('/attendance/:courseId', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), getAttendanceByCourse);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MATERIAL ROUTES (all protected)
@@ -101,10 +102,10 @@ router.get('/attendance/:courseId', authMiddleware(), roleMiddleware('admin', 't
 // PUT    /api/datasedu/materials/:id
 // DELETE /api/datasedu/materials/:id
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/materials', authMiddleware(), getAllMaterials);
-router.post('/materials', authMiddleware(), roleMiddleware('admin', 'teacher'), addMaterial);
-router.get('/materials/course/:courseId', authMiddleware(), getMaterialsByCourse);
-router.put('/materials/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), updateMaterial);
-router.delete('/materials/:id', authMiddleware(), roleMiddleware('admin', 'teacher'), deleteMaterial);
+router.get('/materials', authMiddleware(), requireDbConnection, getAllMaterials);
+router.post('/materials', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), addMaterial);
+router.get('/materials/course/:courseId', authMiddleware(), requireDbConnection, getMaterialsByCourse);
+router.put('/materials/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), updateMaterial);
+router.delete('/materials/:id', authMiddleware(), requireDbConnection, roleMiddleware('admin', 'teacher'), deleteMaterial);
 
 export default router;

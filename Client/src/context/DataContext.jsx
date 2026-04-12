@@ -70,32 +70,54 @@ export const DataProvider = ({ children }) => {
 
     const fetchAll = useCallback(async () => {
         setLoading(true);
-        const tasks = [
-            fetchCourses(),
-            fetchAssignments(),
-            fetchAllSubmissions(),
-            fetchMyAttendance(),
-            fetchMaterials()
-        ];
 
-        // Only admins and teachers can see user lists (teachers manage students)
-        if (user?.role === 'admin' || user?.role === 'teacher') {
-            tasks.push(fetchUsers());
+        try {
+            let tasks = [];
+
+            if (user?.role === 'student') {
+                tasks = [
+                    fetchCourses(),
+                    fetchAssignments(),
+                    fetchAllSubmissions(),
+                    fetchMyAttendance(),
+                    fetchMaterials(),
+                ];
+            } else if (user?.role === 'teacher') {
+                tasks = [
+                    fetchCourses(),
+                    fetchAssignments(),
+                    fetchAllSubmissions(),
+                    fetchMaterials(),
+                    fetchUsers(),
+                ];
+            } else if (user?.role === 'admin') {
+                tasks = [
+                    fetchCourses(),
+                    fetchUsers(),
+                    fetchStats(),
+                ];
+            }
+
+            await Promise.allSettled(tasks);
+        } finally {
+            setLoading(false);
         }
-
-        // Only admins and teachers can see dashboard stats
-        if (user?.role === 'admin' || user?.role === 'teacher') {
-            tasks.push(fetchStats());
-        }
-
-        await Promise.all(tasks);
-        setLoading(false);
-    }, [fetchCourses, fetchAssignments, fetchAllSubmissions, fetchMaterials, fetchUsers, fetchStats, user?.role]);
+    }, [fetchAssignments, fetchAllSubmissions, fetchCourses, fetchMaterials, fetchMyAttendance, fetchStats, fetchUsers, user?.role]);
 
     useEffect(() => {
         if (user) {
             fetchAll();
+            return;
         }
+
+        setCourses([]);
+        setUsers([]);
+        setAssignments([]);
+        setSubmissions([]);
+        setAttendance([]);
+        setMaterials([]);
+        setStats(null);
+        setLoading(false);
     }, [fetchAll, user]);
 
     // ── Course Operations ─────────────────────────────────────────────────────
@@ -306,7 +328,7 @@ export const DataProvider = ({ children }) => {
     return (
         <DataContext.Provider value={{
             // State
-            courses, users, assignments, submissions, attendance, materials, stats, loading,
+            courses, users, assignments, submissions, attendance, materials, stats, loading, user,
             // Course
             addCourse, deleteCourse, enrollStudent, fetchCourses,
             // Users

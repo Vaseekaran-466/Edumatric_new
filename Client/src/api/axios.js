@@ -15,6 +15,7 @@ const fallbackBaseUrl = import.meta.env.PROD
  */
 const api = axios.create({
     baseURL: (envBaseUrl || fallbackBaseUrl).replace(/\/+$/, ''),
+    timeout: 15000,
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
