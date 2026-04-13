@@ -44,15 +44,20 @@ const sendToken = (res, user) => {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     });
 
-    // Always use cross-domain secure cookie settings.
-    // Render always serves over HTTPS, so secure:true is always valid.
-    // sameSite:'none' is required for cross-domain cookies (Vercel frontend → Render backend).
+    // Set HttpOnly cookie for same-origin / local-dev usage
+    // SameSite=None + Secure required for cross-origin, but browsers increasingly
+    // block third-party cookies — the Authorization header is the primary channel
+    // in production (Vercel → Render).
     res.cookie('token', token, {
         httpOnly: true,
         secure: true,
         sameSite: 'none',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+        maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
+    // Return the raw token so the client can store it in sessionStorage
+    // and send it via Authorization: Bearer for cross-origin requests.
+    return token;
 };
 
 // ─── Register ────────────────────────────────────────────────────────────────
@@ -67,10 +72,11 @@ export const register = async (req, res) => {
 
         const user = await dataModel.create({ name, email, password, confirmPassword });
 
-        sendToken(res, user);
+        const token = sendToken(res, user);
 
         res.status(201).json({
             message: 'User registered successfully',
+            token, // returned for cross-origin Authorization header use
             user: { _id: user._id, name: user.name, email: user.email, role: user.role },
         });
     } catch (error) {
@@ -135,10 +141,11 @@ export const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        sendToken(res, user);
+        const token = sendToken(res, user);
 
         res.status(200).json({
             message: 'Login successful',
+            token, // returned for cross-origin Authorization header use
             user: { _id: user._id, name: user.name, email: user.email, role: user.role },
         });
     } catch (error) {

@@ -18,10 +18,20 @@ const ROLE_PATHS = {
 };
 
 // ── Session cache helpers ────────────────────────────────────────────────────
-// We cache a minimal, non-sensitive user snapshot in sessionStorage.
-// This is NOT a security token — it is only used to avoid the flash-redirect
-// to /login that happens during checkAuth() on page refresh.
-// HttpOnly cookies still control actual API authorization on the server.
+// Two separate keys in sessionStorage:
+//
+// 1. edu_auth_token  — The raw JWT, injected as Authorization: Bearer on every
+//    API request via the axios request interceptor. This is the PRIMARY auth
+//    mechanism in production (Vercel → Render) because browsers block cross-site
+//    HttpOnly cookies (Chrome 3rd-party cookie restrictions).
+//
+// 2. edu_session_user — A non-sensitive user snapshot { _id, name, email, role }
+//    used ONLY to prevent the flash-redirect-to-login on page refresh while
+//    checkAuth() is verifying in the background. Never used for API auth.
+//
+// Both are in sessionStorage (not localStorage) so they're cleared when the
+// browser tab is closed. This limits the XSS exposure window.
+const TOKEN_KEY = 'edu_auth_token';
 const SESSION_KEY = 'edu_session_user';
 
 const getCachedUser = () => {
@@ -36,7 +46,6 @@ const getCachedUser = () => {
 const setCachedUser = (user) => {
   try {
     if (user) {
-      // Only cache non-sensitive fields — never the JWT itself
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({
         _id: user._id,
         name: user.name,
@@ -45,6 +54,16 @@ const setCachedUser = (user) => {
       }));
     } else {
       sessionStorage.removeItem(SESSION_KEY);
+    }
+  } catch { /* ignore quota errors */ }
+};
+
+const setStoredToken = (token) => {
+  try {
+    if (token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+    } else {
+      sessionStorage.removeItem(TOKEN_KEY);
     }
   } catch { /* ignore quota errors */ }
 };
@@ -74,9 +93,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const updateUser = useCallback((u) => {
+  const updateUser = useCallback((u, token) => {
     setUser(u);
     setCachedUser(u);
+    // token is passed on login/register; on checkAuth we don't re-receive a token,
+    // so we only update it when explicitly provided.
+    if (token !== undefined) {
+      setStoredToken(token);
+    }
   }, []);
 
   // ── On app load: verify session against the server via /me ───────────────
@@ -85,16 +109,14 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = useCallback(async () => {
     try {
       const { data } = await api.get('/me');
-      updateUser(data.user); // null means no valid cookie → clears cache
+      // /me doesn't return a new token — we just confirm the existing session is valid
+      updateUser(data.user, undefined);
     } catch (err) {
-      // Network errors (e.g., Render cold-start timeout) should NOT log out
-      // the user if we already have a cached session. Only a confirmed 401
-      // from the server means the token is gone/expired.
       if (err.response?.status === 401) {
-        updateUser(null);
+        // Confirmed 401 = token expired/missing — clear everything
+        updateUser(null, null);
       }
-      // For network errors / 5xx, keep the cached user so they aren't
-      // kicked to login when the backend is simply waking up.
+      // Network errors / 5xx: keep the cached session; Render may be cold-starting
     } finally {
       setLoading(false);
     }
@@ -109,7 +131,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const { data } = await api.post('/login', { email, password });
-      updateUser(data.user);
+      updateUser(data.user, data.token); // store both user snapshot and JWT
       navigate(ROLE_PATHS[data.user.role] || '/student');
       return { success: true };
     } catch (err) {
@@ -124,7 +146,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const { data } = await api.post('/register', { name, email, password, confirmPassword, role });
-      updateUser(data.user);
+      updateUser(data.user, data.token); // store both user snapshot and JWT
       navigate(ROLE_PATHS[data.user.role] || '/student');
       return { success: true };
     } catch (err) {
@@ -139,7 +161,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post('/logout');
     } finally {
-      updateUser(null);
+      updateUser(null, null); // clears both user cache and stored JWT token
       navigate('/');
     }
   };
