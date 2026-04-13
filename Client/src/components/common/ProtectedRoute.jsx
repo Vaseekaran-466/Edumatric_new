@@ -4,7 +4,11 @@ import { useAuth } from '../../context/AuthContext';
 const ProtectedRoute = ({ allowedRoles }) => {
     const { user, loading } = useAuth();
 
-    if (loading) {
+    // If auth check is still pending AND we have no cached user at all,
+    // show a spinner. This only happens on a true first-ever visit with no
+    // session cache. If sessionStorage has a user, this block is skipped
+    // entirely and content is displayed immediately.
+    if (loading && !user) {
         return (
             <div className="min-h-screen bg-brand-background flex justify-center items-center">
                 <div className="w-8 h-8 border-4 border-brand-accent border-t-transparent rounded-full animate-spin" />
@@ -12,6 +16,8 @@ const ProtectedRoute = ({ allowedRoles }) => {
         );
     }
 
+    // Auth check is done (or we have a cached user) and no user exists.
+    // This is the only moment we redirect to login.
     if (!user) {
         return <Navigate to="/" replace />;
     }

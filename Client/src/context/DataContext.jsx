@@ -16,7 +16,7 @@ export const DataProvider = ({ children }) => {
     const [materials, setMaterials] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
 
     // ── Fetch all core data on mount ──────────────────────────────────────────
     const fetchCourses = useCallback(async () => {
@@ -105,11 +105,17 @@ export const DataProvider = ({ children }) => {
     }, [fetchAssignments, fetchAllSubmissions, fetchCourses, fetchMaterials, fetchMyAttendance, fetchStats, fetchUsers, user?.role]);
 
     useEffect(() => {
+        // Do NOT fire any API calls while AuthContext is still verifying
+        // the session cookie. Firing early would trigger 401s (cookie not
+        // yet confirmed by server) and pointlessly clear all state.
+        if (authLoading) return;
+
         if (user) {
             fetchAll();
             return;
         }
 
+        // User is confirmed logged-out — clear cached data
         setCourses([]);
         setUsers([]);
         setAssignments([]);
@@ -118,7 +124,7 @@ export const DataProvider = ({ children }) => {
         setMaterials([]);
         setStats(null);
         setLoading(false);
-    }, [fetchAll, user]);
+    }, [fetchAll, user, authLoading]);
 
     // ── Course Operations ─────────────────────────────────────────────────────
     const addCourse = useCallback(async (courseData) => {

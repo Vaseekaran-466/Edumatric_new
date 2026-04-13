@@ -8,28 +8,36 @@ const fallbackBaseUrl = import.meta.env.PROD
 /**
  * Shared axios instance for all API calls.
  * - In development, baseURL points to /api so the Vite proxy forwards to :5000.
- * - In production, default directly to the Render API to avoid relying on a Vercel rewrite
- *   for authenticated requests and cookies.
- * - withCredentials: true is REQUIRED for the browser to send/receive HttpOnly JWT cookies.
- *   Without this, cookies will not be attached to cross-origin requests.
+ * - In production, points directly to the Render API.
+ * - withCredentials: true — required for the browser to send/receive HttpOnly JWT cookies
+ *   on cross-origin requests (Vercel → Render). Without this, cookies are stripped.
  */
 const api = axios.create({
     baseURL: (envBaseUrl || fallbackBaseUrl).replace(/\/+$/, ''),
-    timeout: 15000,
+    timeout: 20000, // 20s — Render free tier can take 10-15s on cold start
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Response interceptor — handle 401 globally (e.g., session expired)
+// Response interceptor — handle 401 globally.
+// We deliberately do NOT redirect here; that's AuthContext's responsibility.
+// This interceptor only handles logging so we don't pollute the console with
+// expected 401s from /me checks on unauthenticated visits.
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            // Token expired or missing — this is expected for guest users on /me
-            // No need to log a warning as AuthContext handles this silently.
+        const status = error.response?.status;
+        const url = error.config?.url;
+
+        if (status === 401) {
+            // /me returning 401 is expected when not logged in — suppress noise
+            if (!url?.endsWith('/me')) {
+                console.warn(`[API] 401 Unauthorized on ${url}`);
+            }
         }
+
         return Promise.reject(error);
     }
 );
