@@ -94,13 +94,16 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const updateUser = useCallback((u, token) => {
+    // IMPORTANT: Write token to sessionStorage SYNCHRONOUSLY first,
+    // before any React state update. React setState is async — if we
+    // wrote the token inside the state setter, the axios interceptor
+    // could fire (via DataContext's useEffect) before sessionStorage
+    // has the token, causing 401s on the first batch of API calls.
+    if (token !== undefined) {
+      setStoredToken(token); // synchronous sessionStorage write
+    }
     setUser(u);
     setCachedUser(u);
-    // token is passed on login/register; on checkAuth we don't re-receive a token,
-    // so we only update it when explicitly provided.
-    if (token !== undefined) {
-      setStoredToken(token);
-    }
   }, []);
 
   // ── On app load: verify session against the server via /me ───────────────
